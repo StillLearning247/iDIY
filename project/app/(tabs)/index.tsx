@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react'; // ✅ CHANGED: Added useRef
 import { View, StyleSheet, Image, Text as RNText } from 'react-native';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { Button } from '@/components/ui/Button';
-import { SearchSuggestions } from '@/components/ui/SearchSuggestions';
+import { SearchSuggestions } from '@/components/ui/SearchSuggestions'; // ✅ Already imported
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import { useTheme } from '@/hooks/useTheme';
 import { Search } from 'lucide-react-native';
@@ -16,11 +16,10 @@ export default function HomeScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const theme = useTheme();
 
-  const trie = new Trie(5);
+  const trieRef = useRef(new Trie(5)); // ✅ CHANGED: Persist Trie instance
 
   useEffect(() => {
-    // Initialize the trie with dictionary data
-    trie.buildFromDictionary(dictionary);
+    trieRef.current.buildFromDictionary(dictionary); // ✅ CHANGED: Build only once
   }, []);
 
   const handleSearch = async () => {
@@ -31,22 +30,24 @@ export default function HomeScreen() {
     setError('');
     setIsLoading(true);
     console.log('Searching for:', searchQuery);
-    
-    // Simulate async search operation
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
     setIsLoading(false);
   };
 
   const handleSelectSuggestion = (suggestion: string) => {
-    setSearchQuery(suggestion);
+    // ✅ CHANGED: Replace only last word with selected suggestion
+    const words = searchQuery.trim().split(' ');
+    words[words.length - 1] = suggestion;
+    setSearchQuery(words.join(' '));
     setSuggestions([]);
   };
 
   useEffect(() => {
     if (searchQuery) {
-      const suggestions = trie.getSuggestions(searchQuery);
-      setSuggestions(suggestions);
+      const words = searchQuery.trim().split(' ');
+      const lastWord = words[words.length - 1].toLowerCase();
+      const found = trieRef.current.getSuggestions(lastWord); // ✅ CHANGED: Call Trie correctly
+      setSuggestions(found);
     } else {
       setSuggestions([]);
     }
@@ -62,6 +63,7 @@ export default function HomeScreen() {
         />
         <RNText style={styles.logoText}>iDIY</RNText>
       </View>
+
       <SearchBar
         value={searchQuery}
         onChangeText={setSearchQuery}
@@ -73,9 +75,16 @@ export default function HomeScreen() {
         placeholder="Search for DIY projects..."
         style={styles.searchBar}
       />
+
+      <SearchSuggestions // ✅ ADDED: Render suggestion list
+        suggestions={suggestions}
+        onSelect={handleSelectSuggestion}
+      />
+
       {error && (
         <RNText style={styles.errorText}>{error}</RNText>
       )}
+
       <Button
         title="Search"
         variant="primary"
@@ -103,28 +112,23 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     marginBottom: 48,
+    alignItems: 'center',
   },
   logo: {
     width: 128,
     height: 128,
     borderRadius: 64,
   },
-  searchBar: {
-    width: '100%',
-    maxWidth: 400,
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  suggestions: {
-    width: '100%',
-    maxWidth: 400,
-    alignSelf: 'center',
-    marginTop: 16,
-  },
   logoText: {
     marginTop: 10,
     fontSize: 24,
     fontWeight: 'bold',
+  },
+  searchBar: {
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
+    marginBottom: 12,
   },
   errorText: {
     marginTop: 8,
