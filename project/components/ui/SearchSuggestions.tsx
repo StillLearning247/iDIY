@@ -27,20 +27,24 @@ export function SearchSuggestions({ suggestions, onSelect }: SearchSuggestionsPr
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: theme.colors.card, // ✅ or 'white', 'lightgray'
+    backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 12, // ✅ Rounded edges
-    marginTop: 4,
+    borderRadius: 12,
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    marginTop: 8,
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
-    zIndex: 100, // ✅ Helps float above other components
+    zIndex: 100,
   },
   suggestion: {
-    padding: 14,
+    padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
     backgroundColor: theme.colors.background,
@@ -49,6 +53,6 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     fontSize: 16,
     fontWeight: '500',
-    paddingLeft: 4,
+    paddingLeft: 0,
   },
 });

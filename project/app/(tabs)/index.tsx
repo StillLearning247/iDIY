@@ -8,9 +8,11 @@ import { useTheme } from '@/hooks/useTheme';
 import { Search } from 'lucide-react-native';
 import { Trie } from '@/utils/Trie';
 import dictionary from '@/assets/dictionaries/diy_dictionary.json';
+import { Keyboard, TouchableWithoutFeedback } from 'react-native';
 
 export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [error, setError] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -20,6 +22,12 @@ export default function HomeScreen() {
 
   useEffect(() => {
     trieRef.current.buildFromDictionary(dictionary); // ✅ CHANGED: Build only once
+    const showSub = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+  const hideSub = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+  return () => {
+    showSub.remove();
+    hideSub.remove();
+  };
   }, []);
 
   const handleSearch = async () => {
@@ -55,50 +63,60 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <LoadingScreen visible={isLoading} />
-      <View style={styles.logoContainer}>
-        <Image
-          source={require('@/assets/images/iDIY_logo.jpg')}
-          style={styles.logo}
-        />
-        <RNText style={styles.logoText}>iDIY</RNText>
-      </View>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <View>
+          <LoadingScreen visible={isLoading} />
+          <View style={styles.logoContainer}>
+            <Image
+              source={require('@/assets/images/iDIY_logo.jpg')}
+              style={styles.logo}
+            />
+            <RNText style={styles.logoText}>iDIY</RNText>
+          </View>
 
-      <SearchBar
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        onClear={() => {
-          setSearchQuery('');
-          setError('');
-          setSuggestions([]);
-        }}
-        placeholder="Search for DIY projects..."
-        style={styles.searchBar}
-      />
+          <View style={styles.searchContainer}>
+            <SearchBar
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onClear={() => {
+                setSearchQuery('');
+                setError('');
+                setSuggestions([]);
+              }}
+              placeholder="Search for DIY projects..."
+              style={styles.searchBar}
+            />
+            {keyboardVisible && suggestions.length > 0 && (
+  <SearchSuggestions
+    suggestions={suggestions}
+    onSelect={handleSelectSuggestion}
+  />
+)}
+          </View>
 
-      <SearchSuggestions // ✅ ADDED: Render suggestion list
-        suggestions={suggestions}
-        onSelect={handleSelectSuggestion}
-      />
+          {error && (
+            <RNText style={styles.errorText}>{error}</RNText>
+          )}
 
+          <Button
+            title="Search"
+            variant="primary"
+            style={[
+              styles.searchButton,
+              {
+                backgroundColor: theme.colors.secondary,
+                borderRadius: 12,
+                paddingVertical: 14,
+              }
+            ]}
+            icon={<Search size={24} color="white" />}
+            onPress={handleSearch}
+          />
+        </View>
+      </TouchableWithoutFeedback>
       {error && (
         <RNText style={styles.errorText}>{error}</RNText>
       )}
-
-      <Button
-        title="Search"
-        variant="primary"
-        style={[
-          styles.searchButton,
-          {
-            backgroundColor: theme.colors.secondary,
-            borderRadius: 12,
-            paddingVertical: 14,
-          }
-        ]}
-        icon={<Search size={24} color="white" />}
-        onPress={handleSearch}
-      />
     </View>
   );
 }
@@ -124,10 +142,14 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
   },
-  searchBar: {
+  searchContainer: {
+    position: 'relative',
     width: '100%',
     maxWidth: 400,
     alignSelf: 'center',
+  },
+  searchBar: {
+    width: '100%',
     marginBottom: 12,
   },
   errorText: {
