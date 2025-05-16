@@ -1,76 +1,32 @@
-import React from 'react';
-import { View, StyleSheet, Image, ScrollView, Platform, Animated, TouchableOpacity } from 'react-native';
-import { Stack, useLocalSearchParams, router } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Image, ScrollView, Platform, TouchableOpacity } from 'react-native';
+import { Stack, Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { Text } from '@/components/ui/Text';
 import { Card } from '@/components/ui/Card'; 
 import { Button } from '@/components/ui/Button'; 
-import { RefreshCw } from 'lucide-react-native';
 import { CompletionCelebration } from '@/components/ui/CompletionCelebration';
-import { Clock, PenTool as Tool, ArrowLeft, Heart, TriangleAlert as AlertTriangle, Check, Square, SquareCheck as CheckSquare } from 'lucide-react-native';
-import { allProjects } from '@/data/projects';
+import { Clock, PenTool as Tool, ArrowLeft, Heart, TriangleAlert as AlertTriangle, Check, Square, SquareCheck as CheckSquare, ChevronLeft, X } from 'lucide-react-native';
+import { useProject } from '@/contexts/ProjectContext';
 import { SkillLevelBadge } from '@/components/ui/SkillLevelBadge';
 import { ToolItem } from '@/components/ui/ToolItem';
-import { useSavedProjects } from '@/contexts/SavedProjectsContext';
 import { useTheme } from '@/hooks/useTheme';
-
-const tools = [
-  { id: '1', name: 'Adjustable Wrench', essential: true },
-  { id: '2', name: 'Pliers', essential: true },
-  { id: '3', name: 'Screwdriver Set', essential: false },
-  { id: '4', name: 'Plumber\'s Tape', essential: true },
-  { id: '5', name: 'Bucket', essential: false },
-];
-
-const safetyTips = [
-  'Turn off water supply before starting',
-  'Wear safety glasses when working with tools',
-  'Keep work area clean and dry',
-  'Have emergency contact numbers ready',
-];
-
-const steps = [
-  {
-    title: 'Preparation',
-    description: 'Before starting, gather all necessary tools and materials. Turn off the water supply to the faucet at the shutoff valve under the sink.',
-    duration: '5 min'
-  },
-  {
-    title: 'Identify the Leak',
-    description: 'Inspect the faucet carefully to determine where the leak is coming from. Common spots include the spout, handles, or base.',
-    duration: '5 min'
-  },
-  {
-    title: 'Disassemble the Faucet',
-    description: 'Remove the faucet handle by unscrewing the decorative cap and removing the screw underneath. Then remove the stem.',
-    duration: '10 min'
-  },
-  {
-    title: 'Replace Worn Parts',
-    description: 'Inspect O-rings and washers for wear. Replace any damaged parts with exact matches.',
-    duration: '5 min'
-  },
-  {
-    title: 'Reassemble and Test',
-    description: 'Put everything back together in reverse order. Turn the water back on and test for leaks.',
-    duration: '5 min'
-  },
-];
+import { useSavedProjects } from '@/contexts/SavedProjectsContext';
+import type { Project } from '@/types';
 
 export default function ProjectDetailsScreen() {
-  const scrollY = React.useRef(new Animated.Value(0)).current;
   const { id } = useLocalSearchParams();
-  const [showCelebration, setShowCelebration] = React.useState(false);
-  const [completedSteps, setCompletedSteps] = React.useState<number[]>([]);
-  const [isGenerating, setIsGenerating] = React.useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const router = useRouter();
   const theme = useTheme();
   const { savedProjects, completedProjects, toggleSaveProject, completeProject } = useSavedProjects();
-  const project = allProjects.find(p => p.id === id);
+  const { getProjectById, projects } = useProject();
+  const project = projects.find(p => p.id === id) || null;
 
-  const headerOpacity = scrollY.interpolate({
-    inputRange: [0, 100],
-    outputRange: [0, 1],
-    extrapolate: 'clamp',
-  });
+  if (!project) {
+    return null;
+  }
 
   const handleComplete = () => {
     completeProject(project.id);
@@ -79,7 +35,7 @@ export default function ProjectDetailsScreen() {
 
   const handleCelebrationClose = () => {
     setShowCelebration(false);
-    router.push('/profile');
+    useRouter().push('/profile');
   };
 
   const toggleStep = (index: number) => {
@@ -88,34 +44,6 @@ export default function ProjectDetailsScreen() {
         ? prev.filter(i => i !== index)
         : [...prev, index]
     );
-  };
-
-  const generateAIContent = async () => {
-    try {
-      setIsGenerating(true);
-      const response = await fetch('/api/generate-project-info', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          projectId: project.id,
-          type: 'description',
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate content');
-      }
-
-      const data = await response.json();
-      // In a real app, you would update the UI with the new content
-      console.log('Generated content:', data);
-    } catch (error) {
-      console.error('Error generating content:', error);
-    } finally {
-      setIsGenerating(false);
-    }
   };
 
   if (!project) {
@@ -135,16 +63,14 @@ export default function ProjectDetailsScreen() {
           headerShown: false,
         }} 
       />
-      <Animated.ScrollView 
+      <ScrollView 
         style={[styles.container, { backgroundColor: theme.colors.background }]}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
-        )}
-        scrollEventThrottle={16}
       >
         <View style={styles.imageContainer}>
-          <Image source={{ uri: project.imageUrl }} style={styles.image} />
+          <Image
+            source={{ uri: project.imageUrl }}
+            style={styles.image}
+          />
         </View>
 
         <View style={styles.content}>
@@ -153,107 +79,117 @@ export default function ProjectDetailsScreen() {
           </Text>
 
           <View style={styles.meta}>
-            <SkillLevelBadge level={project.skillLevel} size="md" />
-            <View style={styles.metaItem}>
-              <Clock size={16} color={theme.colors.textSecondary} />
-              <Text variant="bodySmall" style={styles.metaText}>
-                {project.duration}
-              </Text>
-            </View>
-            <View style={styles.metaItem}>
-              <Tool size={16} color={theme.colors.textSecondary} />
-              <Text variant="bodySmall" style={styles.metaText}>
-                {project.toolCount} {project.toolCount === 1 ? 'tool' : 'tools'}
-              </Text>
-            </View>
+            {project && (
+              <SkillLevelBadge
+                level={project.skillLevel as 1 | 2 | 3 | 4 | 5}
+                size="lg"
+              />
+            )}
+            {project && (
+              <View style={styles.metaItem}>
+                <Clock size={16} color={theme.colors.textSecondary} />
+                <Text variant="bodySmall" style={styles.metaText}>
+                  {project.duration}
+                </Text>
+              </View>
+            )}
+            {project && (
+              <View style={styles.metaItem}>
+                <Tool size={16} color={theme.colors.textSecondary} />
+                <Text variant="bodySmall" style={styles.metaText}>
+                  {project.toolCount} {project.toolCount === 1 ? 'tool' : 'tools'}
+                </Text>
+              </View>
+            )}
           </View>
 
           <Card style={styles.section}>
-            <Text variant="h4" weight="medium" style={styles.sectionTitle}>
-              Description
-            </Text>
-            <Button
-              title="Generate with AI"
-              onPress={generateAIContent}
-              variant="outline"
-              size="sm"
-              loading={isGenerating}
-              icon={<RefreshCw size={16} color={theme.colors.primary} />}
-              style={styles.generateButton}
-            />
-            <Text variant="body">
-              Learn how to fix a leaky faucet with this step-by-step guide. This common household repair can save you money on your water bill and prevent damage to your fixtures.
-            </Text>
-          </Card>
+            {project && (
+              <>
+                <Text variant="h4" weight="medium" style={styles.sectionTitle}>
+                  Description
+                </Text>
+                <Text variant="body">
+                  {project.description}
+                </Text>
+              </>
+            )}
 
-          <Card style={[styles.section, { backgroundColor: `${theme.colors.warning}15` }]}>
-            <View style={styles.safetyHeader}>
-              <AlertTriangle size={24} color={theme.colors.warning} />
-              <Text variant="h4" weight="medium" style={[styles.sectionTitle, { marginLeft: 8 }]}>
-                Safety First
-              </Text>
-            </View>
-            {safetyTips.map((tip, index) => (
-              <Text key={index} variant="body" style={styles.safetyTip}>
-                • {tip}
-              </Text>
-            ))}
-          </Card>
-          
-          <Card style={styles.section}>
-            <Text variant="h4" weight="medium" style={styles.sectionTitle}>
-              Required Tools
-            </Text>
-            {tools.map((tool) => (
-              <ToolItem
-                key={tool.id}
-                name={tool.name}
-                essential={tool.essential}
-              />
-            ))}
-          </Card>
-
-          <Card style={styles.section}>
-            <Text variant="h4" weight="medium" style={styles.sectionTitle}>
-              Step-by-Step Guide
-            </Text>
-            {steps.map((step, index) => (
-              <View key={index} style={styles.step}>
-                <View style={styles.stepHeader}>
-                  <View style={styles.stepTitleContainer}>
-                    <TouchableOpacity 
-                      onPress={() => toggleStep(index)}
-                      style={styles.checkbox}
-                    >
-                      {completedSteps.includes(index) ? (
-                        <CheckSquare size={24} color={theme.colors.primary} />
-                      ) : (
-                        <Square size={24} color={theme.colors.textSecondary} />
-                      )}
-                    </TouchableOpacity>
-                    <Text 
-                      variant="h4" 
-                      weight="medium"
-                      style={[
-                        styles.stepTitle,
-                        completedSteps.includes(index) && styles.completedStep
-                      ]}
-                    >
-                      {step.title}
-                    </Text>
-                  </View>
-                  <Text variant="bodySmall" color="primary">
-                    {step.duration}
+            {project && (
+              <Card style={[styles.section, { backgroundColor: `${theme.colors.warning}15` }]}>
+                <View style={styles.safetyHeader}>
+                  <AlertTriangle size={24} color={theme.colors.warning} />
+                  <Text variant="h4" weight="medium" style={[styles.sectionTitle, { marginLeft: 8 }]}>
+                    Safety First
                   </Text>
                 </View>
-                <Text variant="body" style={styles.stepDescription}>
-                  {step.description}
-                </Text>
-              </View>
-            ))}
+                {project.safetyTips?.map((tip, index) => (
+                  <Text key={index} variant="body" style={styles.safetyTip}>
+                    • {tip}
+                  </Text>
+                ))}
+              </Card>
+            )}
           </Card>
+
+          {project && (
+            <Card style={styles.section}>
+              <Text variant="h4" weight="medium" style={styles.sectionTitle}>
+                Required Tools
+              </Text>
+              {project.tools?.map((tool) => (
+                <ToolItem
+                  key={tool.id}
+                  name={tool.name}
+                  essential={tool.essential}
+                />
+              ))}
+            </Card>
+          )}
+
+          {project && (
+            <Card style={styles.section}>
+              <Text variant="h4" weight="medium" style={styles.sectionTitle}>
+                Step-by-Step Guide
+              </Text>
+              {project.steps?.map((step, index) => (
+                <View key={index} style={styles.step}>
+                  <View style={styles.stepHeader}>
+                    <View style={styles.stepTitleContainer}>
+                      <TouchableOpacity 
+                        onPress={() => toggleStep(index)}
+                        style={styles.checkbox}
+                      >
+                        {completedSteps.includes(index) ? (
+                          <CheckSquare size={24} color={theme.colors.primary} />
+                        ) : (
+                          <Square size={24} color={theme.colors.textSecondary} />
+                        )}
+                      </TouchableOpacity>
+                      <Text 
+                        variant="h4" 
+                        weight="medium"
+                        style={[
+                          styles.stepTitle,
+                          completedSteps.includes(index) && styles.completedStep
+                        ]}
+                      >
+                        {step.title}
+                      </Text>
+                    </View>
+                    <Text variant="bodySmall" color="primary">
+                      {step.duration}
+                    </Text>
+                  </View>
+                  <Text variant="body" style={styles.stepDescription}>
+                    {step.description}
+                  </Text>
+                </View>
+              ))}
+            </Card>
+          )}
         </View>
-      </Animated.ScrollView>
+      </ScrollView>
 
       <View style={[styles.bottomBar, { backgroundColor: theme.colors.background }]}>
         <Button 
@@ -267,36 +203,36 @@ export default function ProjectDetailsScreen() {
         />
       </View>
       
-      <Animated.View 
-        style={[
-          styles.header,
-          {
-            backgroundColor: theme.colors.background,
-            borderBottomColor: theme.colors.border,
-          }
-        ]}
+      <View 
+        style={styles.header}
       >
         <View style={styles.headerContent}>
           <Button
-            icon={<ArrowLeft size={24} color={theme.colors.text} />}
+            title="Back"
+            icon={<ChevronLeft size={20} />}
             variant="ghost"
             onPress={() => router.back()}
-            style={styles.backButton}
           />
-          <Animated.Text
-            style={[
-              {
-                fontFamily: 'Inter-Medium',
-                fontSize: 18,
-                color: theme.colors.text,
-                opacity: headerOpacity,
-              },
-            ]}
+          <Text
+            variant="h4"
+            weight="medium"
+            style={{
+              fontSize: 18,
+              color: theme.colors.text,
+              opacity: 1,
+            }}
             numberOfLines={1}
           >
             {project.title}
-          </Animated.Text>
+          </Text>
           <Button
+            title="Close"
+            icon={<X size={20} />}
+            variant="ghost"
+            onPress={() => router.replace('/(tabs)/projects')}
+          />
+          <Button
+            title={isSaved ? 'Unsave' : 'Save'}
             icon={
               <Heart
                 size={24}
@@ -306,10 +242,10 @@ export default function ProjectDetailsScreen() {
             }
             variant="ghost"
             onPress={() => toggleSaveProject(project.id)}
-            style={styles.saveButton}
+            style={{ marginLeft: 16 }}
           />
         </View>
-      </Animated.View>
+      </View>
       
       {showCelebration && (
         <CompletionCelebration onClose={handleCelebrationClose} />
