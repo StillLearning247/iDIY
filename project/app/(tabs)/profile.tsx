@@ -7,14 +7,12 @@ import { router } from 'expo-router';
 import { Settings, Heart, History, PenTool as Tool, ChevronRight, Bell, CircleHelp as HelpCircle, LogOut, Check } from 'lucide-react-native';
 import { useSavedProjects } from '@/contexts/SavedProjectsContext';
 import { useTheme } from '@/hooks/useTheme';
-import { useAuth } from '@/contexts/AuthContext';
 import { allProjects } from '@/data/projects';
 import { ProjectCard } from '@/components/ui/ProjectCard';
 
 export default function ProfileScreen() {
   const theme = useTheme();
   const { savedProjects, completedProjects } = useSavedProjects();
-  const { user, signOut } = useAuth();
   const [showCompleted, setShowCompleted] = useState(false);
 
   return (
@@ -45,13 +43,10 @@ export default function ProfileScreen() {
             </Text>
           </View>
           <Text variant="h3" weight="bold" style={styles.profileName}>
-            {user?.email?.split('@')[0] || 'User'}
+            Jane Smith
           </Text>
           <Text variant="body" style={styles.profileInfo}>
-            {user?.email || 'No email available'}
-          </Text>
-          <Text variant="bodySmall" style={styles.memberSince}>
-            Member since {new Date().toLocaleDateString()}
+            Member since June 2023
           </Text>
           <Button 
             title="Edit Profile" 
@@ -173,7 +168,7 @@ export default function ProfileScreen() {
 
         <Button 
           title="Log Out" 
-          onPress={signOut} 
+          onPress={() => {}} 
           variant="outline"
           icon={<LogOut size={18} color={theme.colors.error} />}
           textStyle={{ color: theme.colors.error }}
@@ -253,11 +248,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 60,
     paddingBottom: 16,
-  },
-  memberSince: {
-    marginTop: 4,
-    opacity: 0.7,
-    fontSize: 12,
   },
   headerTop: {
     flexDirection: 'row',

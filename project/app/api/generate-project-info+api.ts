@@ -1,6 +1,6 @@
 import { allProjects } from '@/data/projects';
 
-interface N8NWebhookPayload {
+interface ProjectUpdatePayload {
   projectId: string;
   type: 'description' | 'safety' | 'steps';
   content: string;
@@ -8,12 +8,12 @@ interface N8NWebhookPayload {
 
 export async function POST(request: Request) {
   try {
-    const payload: N8NWebhookPayload = await request.json();
+    const payload: ProjectUpdatePayload = await request.json();
     const { projectId, type, content } = payload;
 
-    // Validate webhook payload
+    // Validate payload
     if (!projectId || !type || !content) {
-      return new Response('Invalid webhook payload', { status: 400 });
+      return new Response('Invalid payload', { status: 400 });
     }
 
     // Find project
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       content,
     });
   } catch (error) {
-    console.error('Error processing webhook:', error);
+    console.error('Error processing request:', error);
     return new Response('Internal server error', { status: 500 });
   }
 }
