@@ -21,7 +21,7 @@ interface ButtonProps {
   disabled?: boolean;
   loading?: boolean;
   style?: StyleProp<ViewStyle>;
-  textStyle?: StyleProp<TextStyle>;
+  textStyle?: TextStyle | StyleProp<TextStyle>;
   fullWidth?: boolean;
   icon?: React.ReactNode;
 }
@@ -66,19 +66,16 @@ export function Button({
     }
   };
 
-  const getTextStyle = (variant: ButtonVariant) => {
-    switch (variant) {
-      case 'primary':
-      case 'secondary':
-        return {
-          color: theme.colors.buttonText,
-        };
-      case 'outline':
-      case 'ghost':
-        return {
-          color: disabled ? theme.colors.disabled : theme.colors.primary,
-        };
+  const getTextStyle = (variant: ButtonVariant): TextStyle => {
+    const style: TextStyle = {
+      color: theme.colors.buttonText
+    };
+
+    if (variant === 'outline' || variant === 'ghost') {
+      style.color = theme.colors.primary;
     }
+
+    return style;
   };
 
   const getSizeStyle = (size: ButtonSize): ViewStyle => {
@@ -143,12 +140,14 @@ export function Button({
           {icon && <>{icon}</>}
           <Text 
             style={[
-              styles.text, 
-              getTextStyle(variant),
+              styles.text,
+              {
+                color: disabled ? theme.colors.disabled : getTextStyle(variant).color
+              },
               getTextSizeStyle(size),
               icon && styles.textWithIcon,
-              textStyle
-            ]}
+              textStyle || {}
+            ] as StyleProp<TextStyle>}
             numberOfLines={1}
           >
             {title}
