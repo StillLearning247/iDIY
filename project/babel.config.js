@@ -3,12 +3,18 @@ module.exports = function (api) {
   return {
     presets: ['babel-preset-expo'],
     plugins: [
-      ['module-resolver', {
-        extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
-        alias: {
-          '@': './src'
-        }
-      }]
-    ]
+      [
+        'module-resolver',
+        {
+          extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
+          alias: {
+            '@': './app',
+          },
+          resolvePath: (sourcePath, currentFile, opts) => {
+            return sourcePath;
+          },
+        },
+      ],
+    ],
   };
 };
