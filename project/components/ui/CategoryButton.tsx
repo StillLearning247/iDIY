@@ -1,14 +1,20 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Text } from './Text';
+import { Text } from './Text.js';
 import { useTheme } from '@/hooks/useTheme';
 
 interface CategoryButtonProps {
   title: string;
-  icon: React.ReactNode;
+  icon: React.ReactElement<IconProps>;
   onPress: () => void;
   isActive?: boolean;
 }
+
+interface IconProps {
+  style?: React.CSSProperties;
+  size?: number;
+  color?: string;
+};
 
 export function CategoryButton({ 
   title, 
@@ -40,10 +46,12 @@ export function CategoryButton({
           },
         ]}
       >
-        {React.cloneElement(icon as React.ReactElement, { 
-          color: isActive ? 'white' : theme.colors.primary,
-          size: 20,
-        })}
+        {React.cloneElement(icon as React.ReactElement<IconProps>, { 
+           style: {
+             color: isActive ? 'white' : theme.colors.primary,
+           },
+           size: 20,
+         })}
       </View>
       <Text
         variant="bodySmall"

@@ -4,7 +4,7 @@
     "slug": "idiy",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/iDIY_logo2.jpg",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -14,7 +14,13 @@
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/iDIY_logo2.jpg"
+    },
+    "extra": {
+      "env": {
+        "SUPABASE_URL": "your-supabase-url",
+        "SUPABASE_ANON_KEY": "your-anon-key"
+      }
     },
     "plugins": [
       "expo-router",

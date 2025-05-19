@@ -3,6 +3,7 @@ import { View, StyleSheet, FlatList } from 'react-native';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/Text';
 import { ProjectCard } from '@/components/ui/ProjectCard';
+import { SkillLevel } from '@/types/project';
 import { Button } from '@/components/ui/Button';
 import { useSavedProjects } from '@/contexts/SavedProjectsContext';
 import { useTheme } from '@/hooks/useTheme';
@@ -40,6 +41,7 @@ export default function SavedProjectsScreen() {
           <Text variant="h2" weight="bold">Saved Projects</Text>
           {savedProjectsData.length > 0 && (
             <Button
+              title="Delete"
               icon={<Trash2 size={20} color={isDeleteMode ? theme.colors.error : theme.colors.text} />}
               variant="ghost"
               onPress={() => setIsDeleteMode(!isDeleteMode)}
@@ -80,10 +82,10 @@ export default function SavedProjectsScreen() {
             <ProjectCard
               title={item.title}
               image={{ uri: item.imageUrl }}
-              skillLevel={item.skillLevel as any}
+              skillLevel={item.skillLevel as SkillLevel}
               duration={item.duration}
               toolCount={item.toolCount}
-              isCompleted={completedProjects.includes(item.id)}
+              isCompleted={false}
               isDeleteMode={isDeleteMode}
               isSelected={selectedToDelete.includes(item.id)}
               onToggleSelect={() => handleToggleSelect(item.id)}

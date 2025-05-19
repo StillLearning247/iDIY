@@ -1,33 +1,41 @@
+import 'react-native-url-polyfill/auto'
 import React, { useState, useEffect, useRef } from 'react'; // ✅ CHANGED: Added useRef
 import { View, StyleSheet, Image, Text as RNText } from 'react-native';
-import { SearchBar } from '@/components/ui/SearchBar';
-import { Button } from '@/components/ui/Button';
-import { SearchSuggestions } from '@/components/ui/SearchSuggestions'; // ✅ Already imported
-import LoadingScreen from '@/components/ui/LoadingScreen';
-import { useTheme } from '@/hooks/useTheme';
+import { SearchBar } from '@/components/ui/SearchBar.js';
+import { Button } from '@/components/ui/Button.js';
+import { SearchSuggestions } from '@/components/ui/SearchSuggestions.js'; // ✅ Already imported
+import LoadingScreen from '@/components/ui/LoadingScreen.js';
+import { useTheme } from '@/hooks/useTheme.js';
+import { theme } from '@/theme.js';
 import { Search } from 'lucide-react-native';
-import { Trie } from '@/utils/Trie';
+import { Trie } from '@/utils/Trie.js';
 import dictionary from '@/assets/dictionaries/diy_dictionary.json';
 import { Keyboard, TouchableWithoutFeedback } from 'react-native';
 
 export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  const theme = useTheme();
+
+  // Mock user data - replace with actual auth state
+  useEffect(() => {
+    // TODO: Replace with actual auth state check
+    setUserEmail('user@example.com');
+  }, []);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [error, setError] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const theme = useTheme();
-
-  const trieRef = useRef(new Trie(5)); // ✅ CHANGED: Persist Trie instance
+  const trieRef = useRef(new Trie(5));
 
   useEffect(() => {
-    trieRef.current.buildFromDictionary(dictionary); // ✅ CHANGED: Build only once
+    trieRef.current.buildFromDictionary(dictionary);
     const showSub = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
-  const hideSub = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
-  return () => {
-    showSub.remove();
-    hideSub.remove();
-  };
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
   }, []);
 
   const handleSearch = async () => {
@@ -43,7 +51,6 @@ export default function HomeScreen() {
   };
 
   const handleSelectSuggestion = (suggestion: string) => {
-    // ✅ CHANGED: Replace only last word with selected suggestion
     const words = searchQuery.trim().split(' ');
     words[words.length - 1] = suggestion;
     setSearchQuery(words.join(' '));
@@ -54,7 +61,7 @@ export default function HomeScreen() {
     if (searchQuery) {
       const words = searchQuery.trim().split(' ');
       const lastWord = words[words.length - 1].toLowerCase();
-      const found = trieRef.current.getSuggestions(lastWord); // ✅ CHANGED: Call Trie correctly
+      const found = trieRef.current.getSuggestions(lastWord);
       setSuggestions(found);
     } else {
       setSuggestions([]);
@@ -63,59 +70,64 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <View>
-          <LoadingScreen visible={isLoading} />
-          <View style={styles.logoContainer}>
-            <Image
-              source={require('@/assets/images/iDIY_logo.jpg')}
-              style={styles.logo}
+      <View style={styles.content}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <View>
+            <LoadingScreen visible={isLoading} />
+            <View style={styles.logoContainer}>
+              <Image
+                source={require('@/assets/images/iDIY_logo2.jpg')}
+                style={styles.logo}
+              />
+            </View>
+
+            <View style={styles.searchContainer}>
+              <SearchBar
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onClear={() => {
+                  setSearchQuery('');
+                  setError('');
+                  setSuggestions([]);
+                }}
+                placeholder="Search for DIY projects..."
+                style={styles.searchBar}
+              />
+              {keyboardVisible && suggestions.length > 0 && (
+                <SearchSuggestions
+                  suggestions={suggestions}
+                  onSelect={handleSelectSuggestion}
+                />
+              )}
+            </View>
+
+            {error && (
+              <RNText style={styles.errorText}>{error}</RNText>
+            )}
+
+            <Button
+              title="Search"
+              variant="primary"
+              style={[
+                styles.searchButton,
+                {
+                  backgroundColor: theme.colors.secondary,
+                  borderRadius: 12,
+                  paddingVertical: 14,
+                }
+              ]}
+              icon={<Search size={24} color="white" />}
+              onPress={handleSearch}
             />
-            <RNText style={styles.logoText}>iDIY</RNText>
           </View>
-
-          <View style={styles.searchContainer}>
-            <SearchBar
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onClear={() => {
-                setSearchQuery('');
-                setError('');
-                setSuggestions([]);
-              }}
-              placeholder="Search for DIY projects..."
-              style={styles.searchBar}
-            />
-            {keyboardVisible && suggestions.length > 0 && (
-  <SearchSuggestions
-    suggestions={suggestions}
-    onSelect={handleSelectSuggestion}
-  />
-)}
-          </View>
-
-          {error && (
-            <RNText style={styles.errorText}>{error}</RNText>
-          )}
-
-          <Button
-            title="Search"
-            variant="primary"
-            style={[
-              styles.searchButton,
-              {
-                backgroundColor: theme.colors.secondary,
-                borderRadius: 12,
-                paddingVertical: 14,
-              }
-            ]}
-            icon={<Search size={24} color="white" />}
-            onPress={handleSearch}
-          />
+        </TouchableWithoutFeedback>
+      </View>
+      {userEmail && (
+        <View style={[styles.userContainer, { backgroundColor: theme.colors.background }]}>
+          <RNText style={[styles.userText, { color: theme.colors.text }]}>
+            Logged in as: {userEmail}
+          </RNText>
         </View>
-      </TouchableWithoutFeedback>
-      {error && (
-        <RNText style={styles.errorText}>{error}</RNText>
       )}
     </View>
   );
@@ -124,18 +136,33 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     padding: 16,
   },
+  content: {
+    flex: 1,
+  },
+  userContainer: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
+  },
+  userText: {
+    fontSize: 14,
+    color: theme.colors.text,
+  },
   logoContainer: {
-    marginBottom: 48,
+    width: '100%',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 20,
+    marginBottom: 40,
   },
   logo: {
-    width: 128,
-    height: 128,
-    borderRadius: 64,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
   },
   logoText: {
     marginTop: 10,

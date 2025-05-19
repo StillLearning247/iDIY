@@ -74,3 +74,5 @@ export function Text({
 }
 
 const styles = StyleSheet.create({});
+
+export default Text;
